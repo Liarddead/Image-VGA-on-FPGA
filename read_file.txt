@@ -1,0 +1,11 @@
+module red_txt(addr, data);
+
+  input [11:0] addr;
+  output [3:0] data;
+
+  assign data = bitarray[addr];
+
+  localparam [3:0] bitarray[0:4095] = '{
+    
+  };
+endmodule

@@ -1,0 +1,148 @@
+`timescale 1ns / 1ps
+//////////////////////////////////////////////////////////////////////////////////
+// Company: 
+// Engineer: 
+// 
+// Create Date: 15.12.2022 20:26:30
+// Design Name: 
+// Module Name: vga_top
+// Project Name: 
+// Target Devices: 
+// Tool Versions: 
+// Description: 
+// 
+// Dependencies: 
+// 
+// Revision:
+// Revision 0.01 - File Created
+// Additional Comments:
+// 
+//////////////////////////////////////////////////////////////////////////////////
+
+
+/*
+A simple test pattern using the hvsync_generator module.
+*/
+
+module vga_top(clk, hsync, vsync, VGA_R_3,VGA_G_3,VGA_B_3,VGA_R_2,VGA_G_2,VGA_B_2,VGA_R_1,VGA_G_1,VGA_B_1,VGA_R_0,VGA_G_0,VGA_B_0);
+
+  input clk;
+  output hsync, vsync;
+  output VGA_R_3,VGA_G_3,VGA_B_3;
+  output VGA_R_2,VGA_G_2,VGA_B_2;
+  output VGA_R_1,VGA_G_1,VGA_B_1;
+  output VGA_R_0,VGA_G_0,VGA_B_0;
+  
+  wire display_on;
+  wire [9:0] hpos;
+  wire [9:0] vpos;
+   reg [2:0] rgb_reg;
+  vga_sync hvsync_gen(
+    .clk(clk),
+    .hsync(hsync),
+    .vsync(vsync),
+    .display_on(display_on),
+    .hpos(hpos),
+    .vpos(vpos)
+  );
+ assign VGA_R_3 = red_color[3];
+ assign VGA_R_2 = red_color[2];
+ assign VGA_R_1 = red_color[1];
+ assign VGA_R_0 = red_color[0];
+ assign VGA_G_3 = green_color[3];
+ assign VGA_G_2 = green_color[2];
+ assign VGA_G_1 = green_color[1];
+ assign VGA_G_0 = green_color[0];
+ assign VGA_B_3 = blue_color[3];
+ assign VGA_B_2 = blue_color[2];
+ assign VGA_B_1 = blue_color[1];
+ assign VGA_B_0 = blue_color[0];
+ 
+ reg [9:0] image1_x_left;
+ reg [9:0] image1_x_right;
+
+ reg [9:0] image1_y_top;
+ reg [9:0] image1_y_bottom;
+ 
+  reg [9:0] image2_x_left;
+  reg [9:0] image2_x_right;
+  reg [9:0] image2_y_top;
+  reg [9:0] image2_y_bottom;
+ 
+  
+wire sync_on_1;
+wire sync_on_2;
+reg [11:0] count;
+reg [9:0] scale;
+reg[9:0] picture_size;
+reg [9:0] resize_scale;
+reg [11:0] sum_image1_1;
+reg [11:0] sum_image1_2;
+reg [11:0] sum_image2_1;
+reg [11:0] sum_image2_2;
+wire [3:0] red_buffer;
+wire [3:0] green_buffer;
+wire [3:0] blue_buffer;
+reg [3:0] red_color;
+reg [3:0] blue_color;
+reg [3:0] green_color;
+reg read_ready;
+assign rgb = {1'b0,rgb_reg};
+  
+initial begin 
+count = 0;
+scale =4;
+picture_size =64;
+resize_scale = 1;
+sum_image1_1=0;
+sum_image1_2=0;
+sum_image2_1=0;
+sum_image2_2=0;
+image1_x_left = 20;
+  image1_x_right = (picture_size*scale)+(image1_x_left-1);//209;
+image1_y_top = 20;
+  image1_y_bottom = (picture_size*scale) +image1_y_top; 
+image2_x_left = image1_x_right +30;
+  image2_x_right = (picture_size*resize_scale)+(image2_x_left-1);//209;
+  image2_y_bottom = image1_y_bottom;
+  image2_y_top = image2_y_bottom-(picture_size*resize_scale);
+end 
+
+  red_txt red_file1 (.addr(count),.data(red_buffer));
+  green_txt green_file1 (.addr(count),.data(green_buffer));
+  blue_txt blue_file1 (.addr(count),.data(blue_buffer));
+ 
+  
+assign sync_on_1 =(image1_x_left<=hpos) &&(hpos <=image1_x_right) &&(image1_y_top <=vpos) && (vpos <=image1_y_bottom);
+assign sync_on_2 =(image2_x_left<=hpos) &&(hpos <=image2_x_right) &&(image2_y_top <=vpos) && (vpos <=image2_y_bottom);
+
+
+  always@(posedge clk)begin
+    
+    if((sync_on_1))begin
+    sum_image1_1[9:0] = (hpos-image1_x_left)/scale;
+    sum_image1_2[9:0] = (vpos-image1_y_top)/scale;
+      count = (sum_image1_1+(picture_size*sum_image1_2));
+  	end
+  	if((sync_on_2))begin
+     sum_image2_1[9:0] = (hpos-image2_x_left)/resize_scale;
+     sum_image2_2[9:0] = (vpos-image2_y_top)/resize_scale;
+     count = (sum_image2_1+(picture_size*sum_image2_2));
+  	end
+  end
+always@(posedge clk)begin
+    if((sync_on_1||sync_on_2)) begin
+     red_color = red_buffer;
+     blue_color = blue_buffer;
+     green_color = green_buffer;
+     end
+    else begin
+     red_color =  4'b0000;
+     blue_color = 4'b0000;
+     green_color = 4'b0000;
+    end
+    
+ end 
+   
+
+endmodule

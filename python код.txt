@@ -1,0 +1,40 @@
+
+import numpy as np
+from PIL import Image
+import sys
+import re
+
+Img = Image.open("C:\\Users\\alexa\\Desktop\\kafka_64x64.jpg")
+np.set_printoptions(threshold=sys.maxsize)
+arr = np.asarray(Img, dtype='uint8')
+arr = arr.tolist()
+red = []
+green = []
+blue = []
+for i in range(len(arr)):
+    for j in range(len(arr)):
+        for k in range(3):
+            buf = str(hex(arr[i][j][k] // 16))
+            buf = re.sub(r'0x', r"4'h", buf)
+            buf = buf + ','
+            arr[i][j][k] = buf
+            if (k == 0):
+                red.append(arr[i][j][k])
+            elif (k == 1):
+                green.append(arr[i][j][k])
+            else:
+                blue.append(arr[i][j][k])
+
+print(red)
+print(len(red))
+with open("C:\\Users\\alexa\\Desktop\\kafka.txt", "w") as output:
+    output.write(str(arr))
+with open("C:\\Users\\alexa\\Desktop\\gerta_red.txt", "w") as output:
+    #output.write(str(red))
+    output.writelines("%s\n" % line for line in red)
+with open("C:\\Users\\alexa\\Desktop\\gerta_green.txt", "w") as output:
+    #output.write(str(green))
+    output.writelines("%s\n" % line for line in green)
+with open("C:\\Users\\alexa\\Desktop\\gerta_blue.txt", "w") as output:
+    #output.write(str(blue))
+    output.writelines("%s\n" % line for line in blue)
